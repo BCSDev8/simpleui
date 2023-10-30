@@ -1,5 +1,5 @@
 {% load i18n %}
-
+<!-- Custom Filter -->
 {% if title == "Categories" %}
     <h3>{% blocktrans with filter_title=title %} By {{ filter_title }} {% endblocktrans %}</h3>
     <form action="" method="get" id="multifilter">
