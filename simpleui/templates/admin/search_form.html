@@ -50,12 +50,31 @@
                                    name="{{ spec.field_generic }}lte"/>
 
                         {% elif spec|has_filter %}
+                {% if spec.title == "Categories" %}
+                <div class="multiselect-dropdown">
+                    <h3>{% blocktrans with filter_title=spec.title %} By {{ filter_title }} {% endblocktrans %}</h3>
+                    {% for option in spec.lookup_choices %}
+                        <div>
+                            <input type="checkbox"
+                                   name="{{ spec.parameter_name }}"
+                                   value="{{ option.0 }}"
+                                   id="choice{{ forloop.counter }}"
+                                   {% if option.0 in request.GET.getlist(spec.parameter_name) %} checked {% endif %}>
+                            <label for="choice{{ forloop.counter }}">{{ option.1 }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% else %}
                             <input type="hidden" v-model="{{ spec.parameter_name }}" name="{{ spec.parameter_name }}"/>
                             <el-select size="small" class="simpleui-form-item" filterable v-model="{{ spec.parameter_name }}" clearable placeholder="{{ spec.title }}">
                                 {% for option in spec.lookup_choices %}
                                     <el-option label="{{ option.1 }}" value="{{ option.0 }}"></el-option>
                                 {% endfor %}
                             </el-select>
+                {% endif %}
+
+                
+
 
                         {% else %}
 
