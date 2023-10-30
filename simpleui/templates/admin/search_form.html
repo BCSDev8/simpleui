@@ -49,15 +49,47 @@
                             <input type="hidden" v-model="{{ spec.field_generic }}lte"
                                    name="{{ spec.field_generic }}lte"/>
 
-                        {% elif spec|has_filter %}
-                            <input type="hidden" v-model="{{ spec.parameter_name }}" name="{{ spec.parameter_name }}"/>
-                            <el-select size="small" class="simpleui-form-item" filterable v-model="{{ spec.parameter_name }}" clearable placeholder="{{ spec.title }}">
-                                {% for option in spec.lookup_choices %}
-                                    <el-option label="{{ option.1 }}" value="{{ option.0 }}"></el-option>
-                                {% endfor %}
-                            </el-select>
+{% elif spec|has_filter %}
+    <input type="hidden" v-model="{{ spec.parameter_name }}" name="{{ spec.parameter_name }}"/>
 
-                        {% else %}
+    {% if spec.title == "Categories" %}
+        <h3>{% blocktrans with filter_title=spec.title %} By {{ filter_title }} {% endblocktrans %}</h3>
+        <form action="" method="get" id="multifilter">
+            {% for option in spec.lookup_choices %}
+                <div>
+                    <input type="checkbox"
+                           name="{{ spec.parameter_name }}"
+                           value="{{ option.0 }}"
+                           {% if option.1 == spec.lookup_val %} checked {% endif %}
+                           id="choice{{ forloop.counter }}">
+                    <label for="choice{{ forloop.counter }}">{{ option.1 }}</label>
+                </div>
+            {% endfor %}
+            <input type="submit" value="{% trans 'Apply filter' %}">
+        </form>
+
+        <script>
+            document.getElementById('multifilter').addEventListener('submit', function(e) {
+                e.preventDefault();
+                let queryParts = [];
+                const checkboxes = document.querySelectorAll('#multifilter input[type="checkbox"]:checked');
+
+                checkboxes.forEach(checkbox => {
+                    queryParts.push(checkbox.name + '=' + checkbox.value);
+                });
+
+                const queryString = queryParts.join('&');
+                window.location.href = window.location.pathname + '?' + queryString;
+            });
+        </script>
+    {% else %}
+        <el-select size="small" class="simpleui-form-item" filterable v-model="{{ spec.parameter_name }}" clearable placeholder="{{ spec.title }}">
+            {% for option in spec.lookup_choices %}
+                <el-option label="{{ option.1 }}" value="{{ option.0 }}"></el-option>
+            {% endfor %}
+        </el-select>
+    {% endif %}
+{% else %}
 
                             <input type="hidden" v-model="{{ spec.lookup_kwarg }}" name="{{ spec.lookup_kwarg }}"/>
                             <el-select size="small" class="simpleui-form-item" filterable v-model="{{ spec.lookup_kwarg }}" clearable
