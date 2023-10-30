@@ -49,40 +49,15 @@
                             <input type="hidden" v-model="{{ spec.field_generic }}lte"
                                    name="{{ spec.field_generic }}lte"/>
 
-{% elif spec|has_filter %}
-    <input type="hidden" v-model="{{ spec.parameter_name }}" name="{{ spec.parameter_name }}"/>
+                        {% elif spec|has_filter %}
+                            <input type="hidden" v-model="{{ spec.parameter_name }}" name="{{ spec.parameter_name }}"/>
+                            <el-select size="small" class="simpleui-form-item" filterable v-model="{{ spec.parameter_name }}" clearable placeholder="{{ spec.title }}">
+                                {% for option in spec.lookup_choices %}
+                                    <el-option label="{{ option.1 }}" value="{{ option.0 }}"></el-option>
+                                {% endfor %}
+                            </el-select>
 
-    {% if spec.title == "Categories" %}
-        <el-select v-model="selectedCategories" multiple placeholder="{{ spec.title }}" @change="updateURL">
-            {% for option in spec.lookup_choices %}
-                <el-option label="{{ option.1 }}" value="{{ option.0 }}">
-                    <span style="float: left">{{ option.1 }}</span>
-                    <span style="float: right; color: #8492a6; font-size: 13px" v-if="selectedCategories.includes('{{ option.0 }}')">
-                        <i class="el-icon-check"></i>
-                    </span>
-                </el-option>
-            {% endfor %}
-        </el-select>
-
-        <script>
-            var app = new Vue({
-                el: '#app', 
-                data: {
-                    selectedCategories: []  
-                },
-                methods: {
-                    updateURL: function() {
-                        let queryParts = [];
-                        this.selectedCategories.forEach(category => {
-                            queryParts.push('{{ spec.parameter_name }}=' + category);
-                        });
-                        const queryString = queryParts.join('&');
-                        window.location.href = window.location.pathname + '?' + queryString;
-                    }
-                }
-            });
-        </script>
-    {% else %}
+                        {% else %}
 
                             <input type="hidden" v-model="{{ spec.lookup_kwarg }}" name="{{ spec.lookup_kwarg }}"/>
                             <el-select size="small" class="simpleui-form-item" filterable v-model="{{ spec.lookup_kwarg }}" clearable
