@@ -1,8 +1,42 @@
 {% load i18n %}
-<h3>{% blocktrans with filter_title=title %} By {{ filter_title }} {% endblocktrans %}</h3>
-<ul>
-{% for choice in choices %}
-    <li{% if choice.selected %} class="selected"{% endif %}>
-    <a href="{{ choice.query_string|iriencode }}" title="{{ choice.display }}">{{ choice.display }}</a></li>
-{% endfor %}
-</ul>
+
+{% if title == "Categories" %}
+    <h3>{% blocktrans with filter_title=title %} By {{ filter_title }} {% endblocktrans %}</h3>
+    <form action="" method="get" id="multifilter">
+        {% for choice in choices %}
+            <div>
+                <input type="checkbox"
+                       name="{{ spec.parameter_name }}"
+                       value="{{ choice.value }}"
+                       {% if choice.selected %} checked {% endif %}
+                       id="choice{{ forloop.counter }}">
+                <label for="choice{{ forloop.counter }}">{{ choice.display }}</label>
+            </div>
+        {% endfor %}
+        <input type="submit" value="{% trans 'Apply filter' %}">
+    </form>
+
+    <script>
+        document.getElementById('multifilter').addEventListener('submit', function(e) {
+            e.preventDefault();
+            let queryParts = [];
+            const checkboxes = document.querySelectorAll('#multifilter input[type="checkbox"]:checked');
+
+            checkboxes.forEach(checkbox => {
+                queryParts.push(checkbox.name + '=' + checkbox.value);
+            });
+
+            const queryString = queryParts.join('&');
+            window.location.href = window.location.pathname + '?' + queryString;
+        });
+    </script>
+{% else %}
+    <h3>{% blocktrans with filter_title=title %} By {{ filter_title }} {% endblocktrans %}</h3>
+    <ul>
+        {% for choice in choices %}
+            <li{% if choice.selected %} class="selected"{% endif %}>
+                <a href="{{ choice.query_string|iriencode }}" title="{{ choice.display }}">{{ choice.display }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
