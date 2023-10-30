@@ -1,97 +1,146 @@
 {% load i18n static %}
-{% if cl.search_fields or cl.has_filters %}
-<style>
-    .multiselect-dropdown {
-        border: 1px solid #ccc;
-        padding: 10px;
-        max-height: 200px;
-        overflow-y: auto;
-        display: none;
-    }
-    .filter-toggle-button {
-        margin-bottom: 10px;
-    }
-</style>
-<script type="text/javascript">
-    function preSubmit() {
-        $('#changelist-search').find("input[name!='']").each(function () {
-            if ($(this).val() == '') {
-                $(this).removeAttr('name');
-            }
-        });
-    }
-</script>
+
 <div id="toolbar">
-    <form id="changelist-search" method="get" onsubmit="preSubmit(this)">
+    <form id="changelist-search" method="get">
         <input type="hidden" name="p" value=""/>
         <div class="simpleui-form">
+
             {% if cl.search_fields %}
-            <el-input size="small" class="simpleui-form-item"
-                      clearable
-                      name="{{ search_var }}"
-                      :placeholder="placeholder"
-                      prefix-icon="el-icon-search"
-                      v-model="searchInput" @keyup.enter.native="formSubmit()">
-            </el-input>
+                <input type="text" size="small" class="simpleui-form-item"
+                       clearable
+                       name="{{ search_var }}"
+                       placeholder="Search"
+                       value="{{ cl.query }}">
             {% endif %}
 
             {% if cl.has_filters %}
-            {% for spec in cl.filter_specs %}
-            {% if spec.title == "Categories" %}
-            <button class="filter-toggle-button">Toggle Categories Filter</button>
-            <div class="multiselect-dropdown">
-                <h3>{% blocktrans with filter_title=spec.title %} By {{ filter_title }} {% endblocktrans %}</h3>
-                {% for option in spec.lookup_choices %}
-                <div>
-                    <input type="checkbox"
-                           name="{{ spec.parameter_name }}"
-                           value="{{ option.0 }}"
-                           id="choice{{ forloop.counter }}"
-                           {% if option.0 in request.GET.getlist(spec.parameter_name) %} checked {% endif %}>
-                    <label for="choice{{ forloop.counter }}">{{ option.1 }}</label>
-                </div>
+                {% for spec in cl.filter_specs %}
+                    {% if spec|get_date_type == 'date' or spec|get_date_type == 'datetime' %}
+
+                            <el-date-picker class="simpleui-form-item"
+                                    size="small"
+                                    v-model="{{ spec.field_path }}"
+                                    @change="change{{ spec|get_date_type|capfirst }}"
+                                    type="{{ spec|get_date_type }}range"
+                                    start-placeholder="{{ spec.title }}"
+                                    end-placeholder="{{ spec.title }}">
+                            </el-date-picker>
+
+                            <input type="hidden" v-model="{{ spec.field_generic }}gte"
+                                   name="{{ spec.field_generic }}gte"/>
+                            <input type="hidden" v-model="{{ spec.field_generic }}lte"
+                                   name="{{ spec.field_generic }}lte"/>
+
+                    {% elif spec|has_filter %}
+                        <input type="hidden" name="{{ spec.parameter_name }}" value="{{ spec.lookup_val }}"/>
+
+                        {% if spec.title == "Categories" %}
+                            <h3>{% blocktrans with filter_title=spec.title %} By {{ filter_title }} {% endblocktrans %}</h3>
+                            <div class="dropdown">
+                                <button class="dropbtn">Categories</button>
+                                <div class="dropdown-content">
+                                    {% for option in spec.lookup_choices %}
+                                        <div>
+                                            <input type="checkbox"
+                                                   class="filter-checkbox"
+                                                   name="{{ spec.parameter_name }}"
+                                                   value="{{ option.0 }}"
+                                                   {% if option.0 in request.GET.getlist(spec.parameter_name) %} checked {% endif %}
+                                                   id="choice{{ forloop.counter }}">
+                                            <label for="choice{{ forloop.counter }}">{{ option.1 }}</label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <select size="small" class="simpleui-form-item" name="{{ spec.parameter_name }}">
+                                {% for option in spec.lookup_choices %}
+                                    <option value="{{ option.0 }}" {% if option.0 == spec.lookup_val %} selected {% endif %}>{{ option.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    {% else %}
+                            <input type="hidden" v-model="{{ spec.lookup_kwarg }}" name="{{ spec.lookup_kwarg }}"/>
+                            <el-select size="small" class="simpleui-form-item" filterable v-model="{{ spec.lookup_kwarg }}" clearable
+                                       placeholder="{{ spec.title }}">
+                                {% if spec|get_date_type == 'time' %}
+                                    {% for option in spec.lookup_choices %}
+                                        <el-option label="{{ option }}" value="{{ option|to_str }}"></el-option>
+                                    {% endfor %}
+                                {% elif spec.lookup_choices %}
+                                    {% if spec.lookup_choices.query %}
+                                        {% for option in spec.lookup_choices %}
+                                            <el-option label="{{ option }}" value="{{ option }}"></el-option>
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for option in spec.lookup_choices %}
+                                            <el-option label="{{ option.1 }}" value="{{ option.0 }}"></el-option>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% elif spec.field.choices %}
+                                    {% for option in spec.field.choices %}
+                                        <el-option label="{{ option.1 }}" value="{{ option.0 }}"></el-option>
+                                    {% endfor %}
+                                {% else %}
+                                    {% get_boolean_choices as choices %}
+                                    {% for c in choices %}
+                                        <el-option label="{{ c.1 }}" value="{{ c.0 }}"></el-option>
+                                    {% endfor %}
+                                {% endif %}
+                            </el-select>                    
+            {% endif %}
                 {% endfor %}
-            </div>
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    const dropdown = document.querySelector('.multiselect-dropdown');
-                    const toggleButton = document.querySelector('.filter-toggle-button');
-
-                    toggleButton.addEventListener('click', function() {
-                        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-                    });
-
-                    dropdown.addEventListener('change', function() {
-                        const selected = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked'))
-                            .map(checkbox => checkbox.name + '=' + checkbox.value)
-                            .join('&');
-
-                        window.location.href = window.location.pathname + '?' + selected;
-                    });
-                });
-            </script>
             {% endif %}
-            {% endfor %}
-            {% endif %}
-            <el-button size="small" type="primary" icon="el-icon-search" @click="formSubmit()">{% trans 'Search' %}</el-button>
-            {% if show_result_count %}
-            <span class="small quiet">{% blocktrans count counter=cl.result_count %}{{ counter }} result{% plural %}{{ counter }} results{% endblocktrans %} (<a href="?{% if cl.is_popup %}_popup=1{% endif %}">{% if cl.show_full_result_count %}{% blocktrans with full_result_count=cl.full_result_count %}{{ full_result_count }} total{% endblocktrans %}{% else %}{% trans "Show all" %}{% endif %}</a>)</span>
-            {% endif %}
-
-            {% for pair in cl.params.items %}
-            {% if pair.0 != search_var %}
-            {% if pair.0.0 == '_' or pair.0 == 'o'%}
-            <input type="hidden" name="{{ pair.0 }}" value="{{ pair.1 }}"/>
-            {% else %}
-            <input type="hidden" class="form-params" data-name="{{ pair.0 }}" value="{{ pair.1 }}"/>
-            {% endif %}
-            {% endif %}
-            {% endfor %}
+            <button type="submit">Search</button>
         </div>
     </form>
 </div>
-{% else %}
-<form id="changelist-search" method="get">
-    <input type="hidden" name="p" value=""/>
-</form>
-{% endif %}
+
+<script>
+    document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            document.getElementById('changelist-search').submit();
+        });
+    });
+</script>
+
+<style>
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+    }
+
+    .dropdown-content div {
+        color: black;
+        padding: 12px 16px;
+        display: block;
+    }
+
+    .dropdown-content div:hover {background-color: #f1f1f1}
+
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+
+    .dropbtn {
+        background-color: #4CAF50;
+        color: white;
+        padding: 16px;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .dropbtn:hover, .dropbtn:focus {
+        background-color: #3e8e41;
+    }
+</style>
