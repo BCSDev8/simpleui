@@ -58,7 +58,7 @@
             {% for option in spec.lookup_choices %}
                 <div>
                     <input type="checkbox"
-                           name="{{ spec.parameter_name }}"
+                           name="{{ spec.parameter_name }}[]"
                            value="{{ option.0 }}"
                            {% if option.1 == spec.lookup_val %} checked {% endif %}
                            id="choice{{ forloop.counter }}">
