@@ -57,7 +57,7 @@
         <form action="" method="get" id="multifilter">
             {% for option in spec.lookup_choices %}
                 <div>
-                  <input type="checkbox" name="{{ spec.parameter_name }}[]" value="{{ option.0 }}" {% if option.1 == spec.lookup_val %} checked {% endif %}>
+                  <input type="checkbox" name="{{ spec.parameter_name }}" value="{{ option.0 }}" {% if option.1 == spec.lookup_val %} checked {% endif %}>
                     <label for="choice{{ forloop.counter }}">{{ option.1 }}</label>
                 </div>
             {% endfor %}
